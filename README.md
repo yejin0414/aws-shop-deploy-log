@@ -1,4 +1,4 @@
-# AWS EC2 쇼핑몰 서버 구축 기록 (1일차)
+# AWS EC2 쇼핑몰 서버 구축 기록
 
 신선식품 쇼핑몰 **싱싱마켓**(Django + MariaDB + 토스페이먼츠)을 AWS에 직접 배포하기 위해, 코드를 올리기 직전까지 서버를 구성한 과정입니다.
 처음부터 끝까지 **휴대폰(AWS 콘솔 모바일 웹 + AWS Console 앱)**으로 진행했고, 중간에 막혔던 부분과 해결 과정도 함께 정리했습니다.
@@ -17,15 +17,15 @@
 
 ## 진행 현황
 
-- [x] IAM 사용자 생성 (그룹으로 권한 관리)
+- [o] IAM 사용자 생성 (그룹으로 권한 관리)
 - [ ] IAM 정책·역할 (S3·CloudWatch용) — EC2에는 나중에 연결
-- [x] EC2 인스턴스 생성 (t3.micro, 20GiB gp3, 서울 리전)
-- [x] 보안 그룹 설정 (SSH 22, HTTP 80)
-- [x] 탄력적 IP 할당·연결
-- [x] EC2 Instance Connect로 접속
-- [x] 패키지 설치 (Python 3.11, Nginx, MariaDB, unzip)
-- [x] 스왑 2GB 설정
-- [x] MariaDB 쇼핑몰 DB·계정 생성
+- [o] EC2 인스턴스 생성 (t3.micro, 20GiB gp3, 서울 리전)
+- [o] 보안 그룹 설정 (SSH 22, HTTP 80)
+- [o] 탄력적 IP 할당·연결
+- [o] EC2 Instance Connect로 접속
+- [o] 패키지 설치 (Python 3.11, Nginx, MariaDB, unzip)
+- [o] 스왑 2GB 설정
+- [o] MariaDB 쇼핑몰 DB·계정 생성
 - [ ] 코드 업로드 및 배포 (PC에서 진행 예정)
 
 ---
