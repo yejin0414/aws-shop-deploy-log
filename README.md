@@ -15,14 +15,16 @@
 4. [Part 3. 서버 기본 설정 (휴대폰)](#part-3-서버-기본-설정-휴대폰)
 5. [Part 4. 코드 배포 (PC)](#part-4-코드-배포-pc)
 6. [Part 5. 동작 확인](#part-5-동작-확인)
-7. [트러블슈팅](#트러블슈팅)
-8. [보안·비용 체크리스트](#보안비용-체크리스트)
-9. [다음 할 일](#다음-할-일)
+7. [Part 6. 모니터링 (CloudWatch)](#part-6-모니터링-cloudwatch)
+8. [트러블슈팅](#트러블슈팅)
+9. [보안·비용 체크리스트](#보안비용-체크리스트)
+10. [회고](#회고)
+11. [다음 할 일](#다음-할-일)
 
 ## 진행 현황
 
 - [o] IAM 사용자 생성 (그룹으로 권한 관리)
-- [ ] IAM 정책·역할 (S3·CloudWatch용) — EC2에는 나중에 연결
+- [o] EC2용 IAM 역할 생성·연결 (CloudWatch 에이전트용)
 - [o] EC2 인스턴스 생성 (t3.micro, 20GiB gp3, 서울 리전)
 - [o] 보안 그룹 설정 (SSH 22, HTTP 80)
 - [o] 탄력적 IP 할당·연결
@@ -31,6 +33,8 @@
 - [o] 스왑 2GB 설정
 - [o] MariaDB 쇼핑몰 DB·계정 생성
 - [o] 코드 업로드 및 배포 (Gunicorn + Nginx)
+- [o] CloudWatch 모니터링 (기본 지표, 에이전트로 메모리·디스크·스왑·Nginx 로그, 경보)
+- [ ] S3로 상품 이미지 분리
 - [ ] SSH 접근 범위 축소, HTTPS 적용
 
 ## 사용 기술
@@ -43,6 +47,7 @@
 | 백엔드 | Python 3.11, Django 5.2 |
 | DB | MariaDB 10.5 (EC2 내부, 외부 비공개) |
 | 결제 | 토스페이먼츠 결제위젯 v2 (테스트 모드) |
+| 모니터링 | CloudWatch(지표·Logs·경보), CloudWatch 에이전트, SNS 이메일 알림 |
 
 쇼핑몰 코드는 [`ssingssing/`](ssingssing) 폴더에 있습니다. (`.env`·DB 파일은 제외)
 
@@ -85,11 +90,22 @@ IAM → IAM 사용자 → **사용자 생성**
 
 <img src="images/05-iam-review.jpg" width="360"> <img src="images/06-iam-user-created.jpg" width="360">
 
-### 1-4. (예정) EC2용 IAM 정책·역할
-상품 이미지를 S3에 저장하고 CloudWatch로 지표·로그를 보내기 위한 **최소 권한** 정책입니다.
+### 1-4. EC2용 IAM 역할
+서버(EC2) 안의 프로그램이 AWS를 쓰려면 **사용자가 아니라 역할**이 필요합니다.
+
+| 항목 | 설정 |
+|---|---|
+| 역할 이름 | `ssingssing-ec2-role` |
+| 신뢰할 수 있는 엔터티 | AWS 서비스 → **EC2** (`ec2.amazonaws.com`) |
+| 권한 정책 | `CloudWatchAgentServerPolicy` (AWS 관리형) |
+| 연결 | EC2 → 인스턴스 → 작업 → 보안 → **IAM 역할 수정** |
+
+> 사용 사례를 EC2로 골라야 '인스턴스 프로파일'이 함께 만들어져서 EC2 화면 목록에 나타납니다.
+
+S3 연동 단계에서 같은 역할에 추가할 최소 권한 정책(예정)은 아래와 같습니다.
 
 <details>
-<summary>정책 JSON 보기</summary>
+<summary>S3·CloudWatch 최소 권한 정책 JSON 보기</summary>
 
 ```json
 {
@@ -134,7 +150,7 @@ IAM → IAM 사용자 → **사용자 생성**
 | CloudWatchLogs | Nginx·Django 로그 전송 |
 | CloudWatchAgentConfig | CloudWatch 에이전트 설정 불러오기 |
 
-순서: **정책 생성 → 역할 생성(신뢰 엔터티: AWS 서비스 → EC2) → EC2에 연결**(`작업 → 보안 → IAM 역할 수정`). DB는 서버 안에서 비밀번호로, 결제는 토스 키로 동작해서 AWS 권한이 필요 없습니다.
+DB는 서버 안에서 비밀번호로, 결제는 토스 키로 동작해서 AWS 권한이 필요 없습니다.
 
 ---
 
@@ -347,6 +363,88 @@ mysqldump -u shop -p ssingssing > backup_$(date +%F).sql   # DB 백업
 
 ---
 
+## Part 6. 모니터링 (CloudWatch)
+
+| 단계 | 볼 수 있는 것 | 필요한 것 |
+|---|---|---|
+| 기본 지표 | CPU, 네트워크, 디스크 읽기·쓰기, 상태 검사 (5분 간격) | 없음. EC2가 자동 전송 |
+| **에이전트** | **메모리·디스크 사용률, 스왑**, Nginx 로그 | IAM 역할 + 서버에 에이전트 설치 |
+
+메모리·디스크 '사용률'은 서버 안에서만 알 수 있어서 AWS 바깥에서는 보이지 않습니다. 메모리 1GB 서버라 메모리 지표가 특히 중요해서 에이전트를 설치했습니다.
+
+<img src="images/21-ec2-basic-monitoring.png" width="720">
+
+*EC2 모니터링 탭의 기본 지표. 메모리 항목이 없음*
+
+### 6-1. 에이전트 설치·설정
+[1-4](#1-4-ec2용-iam-역할)의 IAM 역할을 EC2에 연결한 뒤 서버에서:
+```bash
+sudo dnf install -y amazon-cloudwatch-agent
+
+sudo tee /opt/aws/amazon-cloudwatch-agent/etc/config.json > /dev/null << 'EOF'
+{
+  "agent": { "metrics_collection_interval": 60, "run_as_user": "root" },
+  "metrics": {
+    "namespace": "CWAgent",
+    "append_dimensions": { "InstanceId": "${aws:InstanceId}" },
+    "metrics_collected": {
+      "mem":  { "measurement": ["mem_used_percent"] },
+      "swap": { "measurement": ["swap_used_percent"] },
+      "disk": { "measurement": ["used_percent"], "resources": ["/"], "drop_device": true }
+    }
+  },
+  "logs": {
+    "logs_collected": {
+      "files": {
+        "collect_list": [
+          { "file_path": "/var/log/nginx/access.log", "log_group_name": "/ssingssing/nginx/access", "log_stream_name": "{instance_id}", "retention_in_days": 7 },
+          { "file_path": "/var/log/nginx/error.log",  "log_group_name": "/ssingssing/nginx/error",  "log_stream_name": "{instance_id}", "retention_in_days": 7 }
+        ]
+      }
+    }
+  }
+}
+EOF
+
+sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl \
+  -a fetch-config -m ec2 -s -c file:/opt/aws/amazon-cloudwatch-agent/etc/config.json
+sudo systemctl status amazon-cloudwatch-agent --no-pager     # active (running)
+```
+- 1분마다 메모리·스왑·루트 디스크(`/`) 사용률 전송
+- Nginx 접속·에러 로그를 CloudWatch Logs로 전송, **7일만 보관**(요금 관리)
+
+### 6-2. 확인
+CloudWatch → 지표 → 모든 지표 → 찾아보기 → **사용자 지정 네임스페이스 `CWAgent`**
+
+<img src="images/23-cloudwatch-cwagent-namespace.png" width="520"> <img src="images/25-cloudwatch-mem-graph.png" width="520">
+
+- 메모리 사용률 약 **43%** (Nginx·Gunicorn·Django·MariaDB 동시 구동, 스왑 2GB 별도)
+- 지표는 IAM 역할을 연결하고 에이전트를 재시작한 시점부터 들어오기 시작
+- 디스크 지표는 `path`·`fstype` 정보가 붙어 **`InstanceId, fstype, path`** 묶음에 따로 있음 → [트러블슈팅 ⑩](#트러블슈팅)
+
+<img src="images/24-cloudwatch-metric-filter.png" width="520">
+
+*`InstanceId` 묶음에서 `used_percent`로 검색하면 메모리·스왑만 나오고 디스크는 나오지 않음*
+
+### 6-3. 경보 + 이메일 알림
+1. **SNS** → 주제 생성(표준) `ssingssing-alarm` → 구독: 이메일 → 메일의 **Confirm subscription** 클릭
+2. **CloudWatch → 경보 → 경보 생성**: 지표 1개만 선택 → 통계 평균, 기간 5분, 정적 임계값 → 알림 대상 `ssingssing-alarm`
+
+| 경보 | 지표 | 조건 |
+|---|---|---|
+| `ssingssing-cpu-high` | EC2 `CPUUtilization` | > 70% |
+| `ssingssing-status-check` | EC2 `StatusCheckFailed` | ≥ 1 |
+| `ssingssing-mem-high` | CWAgent `mem_used_percent` | > 80% |
+| `ssingssing-disk-high` | CWAgent `used_percent` (path `/`) | > 80% |
+
+> 만든 직후 상태는 **데이터 부족**이 정상입니다. 기간(5분)만큼 데이터가 쌓이면 **정상(OK)**으로 바뀌고, 임계값을 넘으면 **경보** 상태가 되며 이메일이 옵니다.
+
+**요금**: 무료 범위(사용자 지정 지표 10개, 경보 10개, 로그 수집 5GB) 안에서 구성 — 지표 3개, 경보 4개, 로그 7일 보관.
+
+**문제 확인**: `sudo tail -n 30 /opt/aws/amazon-cloudwatch-agent/logs/amazon-cloudwatch-agent.log`
+
+---
+
 ## 트러블슈팅
 
 | # | 증상 | 원인 | 해결 |
@@ -359,6 +457,8 @@ mysqldump -u shop -p ssingssing > backup_$(date +%F).sql   # DB 백업
 | ⑥ | `.env` 값이 이상함 | `< >` 꺾쇠까지 입력 | `cat > .env`로 덮어써서 다시 작성 |
 | ⑦ | `ERROR 2002 ... mysql.sock (13)` | 초기화한 데이터 폴더 권한 700 | 소유자·권한 수정 |
 | ⑧ | 테스트 DB 생성 실패 (1044) | shop 계정에 `test_ssingssing` 권한 없음 | 테스트 DB 권한 추가 |
+| ⑨ | 에이전트를 켰는데 `CWAgent` 지표가 안 생김 | 정책을 **IAM 사용자(그룹)**에 붙임. 서버는 사람 권한을 못 씀 | EC2용 **IAM 역할** 생성·연결 후 에이전트 재시작 |
+| ⑩ | 디스크 지표를 못 찾음 | 디스크 지표는 다른 차원 묶음(`InstanceId, fstype, path`)에 있음 | `CWAgent` → 해당 묶음에서 `path = /` 선택 |
 
 ### ③ MariaDB root 접속 불가
 ```console
@@ -427,25 +527,64 @@ sudo mysql -e "GRANT ALL PRIVILEGES ON test_ssingssing.* TO 'shop'@'localhost'; 
 python manage.py test orders      # Ran 5 tests ... OK
 ```
 
+### ⑨ CloudWatch 에이전트 지표가 안 생김
+- 에이전트는 `active (running)`인데 `CWAgent` 네임스페이스가 없었음
+- `CloudWatchAgentServerPolicy`를 **사용자 그룹**에 붙여 두고 '역할을 만들었다'고 착각함
+
+<img src="images/22-iam-user-policy-confusion.png" width="360">
+
+*IAM 사용자의 권한 화면. CloudWatchAgent 정책이 그룹을 통해 '사람'에게 붙어 있음 (ARN의 계정 ID는 가림)*
+
+| | 권한을 쓰는 주체 | 붙이는 곳 |
+|---|---|---|
+| IAM 사용자·그룹 | 콘솔에 로그인하는 사람 | 사용자 / 그룹 |
+| **IAM 역할** | EC2 안의 프로그램(에이전트, 앱) | **EC2 인스턴스** |
+
+```bash
+# 서버에 역할이 붙어 있는지 확인 (IMDSv2)
+TOKEN=$(curl -sX PUT http://169.254.169.254/latest/api/token -H "X-aws-ec2-metadata-token-ttl-seconds: 60")
+curl -s -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/iam/info
+# 역할 연결 후
+sudo systemctl restart amazon-cloudwatch-agent
+```
+**배운 점**: 서버 권한은 액세스 키를 서버에 두지 않고 **역할**로 준다. 사람용 그룹에 붙인 불필요한 정책은 제거.
+
 ---
 
 ## 보안·비용 체크리스트
 
 **보안**
 - [ ] 보안 그룹 SSH(22) 소스를 `내 IP`로 축소
-- [ ] 루트·IAM 사용자 모두 MFA
+- [ ] 루트·IAM 사용자 모두 MFA (IAM 사용자 'MFA 없이 활성화됨' 경고 해결)
+- [ ] 사용자 그룹에 붙인 `CloudWatchAgentServerPolicy` 제거 (역할에만 필요)
 - [ ] `.env`는 `chmod 600`, 깃허브·채팅에 올리지 않기 (`.gitignore`에 포함)
 - [ ] DB 비밀번호·Django 시크릿 키를 충분히 긴 랜덤 값으로
 - [ ] 기본 생성된 `test` DB 삭제: `sudo mysql -e "DROP DATABASE IF EXISTS test;"`
 - [ ] 도메인 + HTTPS(Let's Encrypt) 적용 후 `.env`의 `USE_HTTPS=true`
 
 **비용**
+- [o] CloudWatch 경보 + SNS 이메일 알림
 - [ ] 결제 알림(예산) 설정
 - [ ] 다 쓰면: EC2 종료 → 탄력적 IP **릴리스** → EBS 볼륨·스냅샷 확인
 
+---
+
+## 회고
+
+**한 일**: EC2 1대에 Nginx·Gunicorn·Django·MariaDB를 직접 구성해 쇼핑몰을 배포하고, IAM 역할로 CloudWatch 에이전트를 연결해 메모리·디스크·로그·경보까지 모니터링을 붙였습니다.
+
+| 영역 | 겪은 문제 | 핵심 |
+|---|---|---|
+| IAM | 그룹에 정책 없음, 사용자와 역할 혼동 | 권한은 '정책'에서 나오고, 서버 권한은 역할로 |
+| 리눅스 권한 | `.pem` 권한, `/var/lib/mysql` 700, `.env` 600, 홈 디렉터리 711 | 누가(소유자·그룹) 무엇을(rwx) 할 수 있는지 |
+| DB | unix_socket, 테스트 DB 권한 | root는 sudo로만, 앱은 전용 계정·최소 권한 |
+| 모니터링 | 메모리 지표 부재, 차원 묶음 | 기본 지표의 한계와 에이전트의 역할 |
+
+공통적으로 **에러 메시지의 코드와 문구(403, 1044, errno 13, `no identity-based policy`)를 그대로 읽고, 어느 계층(권한·네트워크·설정)의 문제인지 좁혀 가는 방식**으로 해결했습니다. 무선랜 운영에서 증상 → 범위 좁히기 → 원인 확인 순서로 장애를 다루던 방식이 클라우드에서도 그대로 쓰였습니다.
+
 ## 다음 할 일
 - [ ] IAM 역할 연결 → S3 상품 이미지 저장 (`.env`의 `USE_S3=true`)
-- [ ] CloudWatch 에이전트 설치 → 메모리·디스크 지표, Nginx·Django 로그, 경보
+- [ ] Django(Gunicorn) 로그도 파일로 남겨 CloudWatch Logs로 수집
 - [ ] 도메인 연결 + HTTPS
 - [ ] DB 백업 자동화(cron), 트래픽이 늘면 DB를 RDS로 분리
 - [ ] 실결제 전환: 사업자등록·통신판매업 신고 → 토스페이먼츠 계약 → 라이브 키 교체
