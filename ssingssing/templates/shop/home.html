@@ -1,0 +1,42 @@
+{% extends "base.html" %}{% load static %}
+{% block content %}
+<main class="container">
+  {% if show_banner %}
+  <section class="hero">
+    <img src="{% static 'img/banner.png' %}" alt="">
+    <div class="hero-text">
+      <span class="pill">🌱 산지 직송 신선식품</span>
+      <h1>오늘 수확한 신선함,<br>내일 아침 문 앞까지</h1>
+      <p>믿을 수 있는 농가에서 바로 보내 드려요.</p>
+      <a href="#products" class="btn">지금 쇼핑하기</a>
+    </div>
+  </section>
+  <div class="benefits">
+    <div class="benefit"><span class="ico">🚚</span><div><b>샛별배송</b><span>밤 11시 전 주문 시 내일 도착</span></div></div>
+    <div class="benefit"><span class="ico">🎁</span><div><b>무료배송</b><span>3만원 이상 구매 시</span></div></div>
+    <div class="benefit"><span class="ico">🌾</span><div><b>산지 직송</b><span>농가에서 바로 출고</span></div></div>
+    <div class="benefit"><span class="ico">↩️</span><div><b>신선 보장</b><span>불만족 시 100% 환불</span></div></div>
+  </div>
+  {% endif %}
+
+  <section class="section" id="products">
+    <div class="section-title">
+      <div><h2>{{ title }}</h2><p>총 {{ products|length }}개</p></div>
+      <form class="toolbar" method="get">
+        {% if current %}<input type="hidden" name="cat" value="{{ current.pk }}">{% endif %}
+        {% if q %}<input type="hidden" name="q" value="{{ q }}">{% endif %}
+        <select class="sort" name="sort" onchange="this.form.submit()">
+          <option value="rec" {% if sort == 'rec' %}selected{% endif %}>추천순</option>
+          <option value="low" {% if sort == 'low' %}selected{% endif %}>낮은 가격순</option>
+          <option value="high" {% if sort == 'high' %}selected{% endif %}>높은 가격순</option>
+          <option value="sale" {% if sort == 'sale' %}selected{% endif %}>할인 상품만</option>
+        </select>
+      </form>
+    </div>
+    <div class="grid">
+      {% for p in products %}{% include "includes/product_card.html" %}
+      {% empty %}<div class="empty" style="grid-column:1/-1"><div class="ico">🔎</div>찾으시는 상품이 없어요</div>{% endfor %}
+    </div>
+  </section>
+</main>
+{% endblock %}

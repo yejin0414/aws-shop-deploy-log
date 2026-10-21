@@ -1,0 +1,4 @@
+{% load humanize %}<div class="sum-row"><span>상품금액</span><span>{{ summary.original|intcomma }}원</span></div>
+<div class="sum-row"><span>상품할인</span><span style="color:var(--red)">{% if summary.discount %}−{{ summary.discount|intcomma }}원{% else %}0원{% endif %}</span></div>
+<div class="sum-row"><span>배송비</span><span>{% if summary.shipping %}{{ summary.shipping|intcomma }}원{% else %}무료{% endif %}</span></div>
+<div class="sum-row total"><span>결제금액</span><b>{{ summary.total|intcomma }}원</b></div>

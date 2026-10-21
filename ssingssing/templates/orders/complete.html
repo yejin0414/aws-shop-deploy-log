@@ -1,0 +1,15 @@
+{% extends "base.html" %}{% load humanize %}
+{% block title %}주문 완료 | {{ SHOP_NAME }}{% endblock %}
+{% block content %}
+<main class="container">
+  <div class="done">
+    <div class="circle">✓</div>
+    <h1>결제가 완료됐어요</h1>
+    <p>{{ order.recipient }}님, 내일 아침 문 앞에 도착할 예정이에요.</p>
+    <div class="order-no">주문번호 {{ order.order_id }} · {{ order.total_amount|intcomma }}원</div><br>
+    {% if order.receipt_url %}<a href="{{ order.receipt_url }}" target="_blank" class="btn btn-ghost">영수증</a>{% endif %}
+    <a href="{% url 'orders:detail' order.order_id %}" class="btn btn-outline">주문 상세</a>
+    <a href="{% url 'shop:home' %}" class="btn btn-primary">쇼핑 계속하기</a>
+  </div>
+</main>
+{% endblock %}

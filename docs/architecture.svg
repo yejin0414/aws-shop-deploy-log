@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="620" viewBox="0 0 1000 620" font-family="Pretendard, 'Apple SD Gothic Neo', 'Malgun Gothic', 'Noto Sans KR', sans-serif">
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#334155"/></marker>
+    <marker id="g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#94a3b8"/></marker>
+  </defs>
+  <rect width="1000" height="620" fill="#ffffff"/>
+  <text x="30" y="40" font-size="22" font-weight="700" fill="#0f172a">싱싱마켓 배포 구조</text>
+  <text x="30" y="64" font-size="14" fill="#64748b">EC2 1대에 웹 서버·앱·DB를 모두 올린 단일 서버 구성</text>
+
+  <!-- user -->
+  <rect x="30" y="250" width="130" height="90" rx="12" fill="#f1f5f9" stroke="#cbd5e1"/>
+  <text x="95" y="290" font-size="16" font-weight="700" text-anchor="middle" fill="#0f172a">사용자</text>
+  <text x="95" y="314" font-size="13" text-anchor="middle" fill="#64748b">브라우저</text>
+
+  <!-- region -->
+  <rect x="200" y="90" width="560" height="500" rx="16" fill="#fff7ed" stroke="#fb923c" stroke-dasharray="6 4"/>
+  <text x="220" y="118" font-size="14" font-weight="700" fill="#c2410c">AWS 서울 리전 (ap-northeast-2)</text>
+  <!-- vpc -->
+  <rect x="220" y="132" width="520" height="440" rx="14" fill="#f0fdf4" stroke="#22c55e"/>
+  <text x="240" y="158" font-size="13" font-weight="700" fill="#15803d">기본 VPC 172.31.0.0/16 · 퍼블릭 서브넷</text>
+  <!-- SG -->
+  <rect x="240" y="172" width="480" height="380" rx="12" fill="#ffffff" stroke="#ef4444" stroke-width="2"/>
+  <text x="260" y="198" font-size="13" font-weight="700" fill="#b91c1c">보안 그룹 (인바운드)</text>
+  <text x="260" y="218" font-size="12" fill="#475569">HTTP 80 ← 0.0.0.0/0   ·   SSH 22 ← 내 IP/32   ·   3306 닫힘</text>
+
+  <!-- EC2 -->
+  <rect x="270" y="234" width="420" height="300" rx="12" fill="#f8fafc" stroke="#334155"/>
+  <text x="290" y="260" font-size="15" font-weight="700" fill="#0f172a">EC2  t3.micro · Amazon Linux 2023</text>
+  <text x="290" y="280" font-size="12" fill="#64748b">EBS 20GiB gp3 · 스왑 2GB · 탄력적 IP(고정 주소)</text>
+
+  <rect x="290" y="296" width="380" height="44" rx="8" fill="#e0f2fe" stroke="#0284c7"/>
+  <text x="305" y="323" font-size="14" font-weight="700" fill="#075985">Nginx :80</text>
+  <text x="410" y="323" font-size="12" fill="#0c4a6e">/static/ 직접 응답, 나머지는 Gunicorn으로</text>
+
+  <rect x="290" y="356" width="380" height="44" rx="8" fill="#ede9fe" stroke="#7c3aed"/>
+  <text x="305" y="383" font-size="14" font-weight="700" fill="#5b21b6">Gunicorn</text>
+  <text x="410" y="383" font-size="12" fill="#4c1d95">systemd 서비스 · unix 소켓으로 연결</text>
+
+  <rect x="290" y="416" width="380" height="44" rx="8" fill="#dcfce7" stroke="#16a34a"/>
+  <text x="305" y="443" font-size="14" font-weight="700" fill="#166534">Django</text>
+  <text x="410" y="443" font-size="12" fill="#14532d">회원·상품·장바구니·주문·결제 검증</text>
+
+  <rect x="290" y="476" width="380" height="44" rx="8" fill="#fef3c7" stroke="#d97706"/>
+  <text x="305" y="503" font-size="14" font-weight="700" fill="#92400e">MariaDB</text>
+  <text x="410" y="503" font-size="12" fill="#78350f">127.0.0.1:3306 · 외부 비공개 · shop 계정</text>
+
+  <line x1="480" y1="340" x2="480" y2="354" stroke="#334155" stroke-width="2" marker-end="url(#a)"/>
+  <line x1="480" y1="400" x2="480" y2="414" stroke="#334155" stroke-width="2" marker-end="url(#a)"/>
+  <line x1="480" y1="460" x2="480" y2="474" stroke="#334155" stroke-width="2" marker-end="url(#a)"/>
+
+  <line x1="160" y1="300" x2="286" y2="318" stroke="#334155" stroke-width="2.5" marker-end="url(#a)"/>
+  <text x="168" y="290" font-size="12" fill="#334155">http://탄력적IP</text>
+
+  <!-- toss -->
+  <rect x="800" y="400" width="170" height="90" rx="12" fill="#eff6ff" stroke="#3b82f6"/>
+  <text x="885" y="436" font-size="15" font-weight="700" text-anchor="middle" fill="#1e40af">토스페이먼츠</text>
+  <text x="885" y="460" font-size="12" text-anchor="middle" fill="#1e3a8a">결제 승인·취소 API</text>
+  <line x1="670" y1="438" x2="796" y2="444" stroke="#334155" stroke-width="2" marker-end="url(#a)"/>
+  <text x="764" y="392" font-size="11" fill="#334155">시크릿 키</text>
+
+  <!-- future -->
+  <rect x="800" y="150" width="170" height="80" rx="12" fill="#ffffff" stroke="#94a3b8" stroke-dasharray="5 4"/>
+  <text x="885" y="184" font-size="14" font-weight="700" text-anchor="middle" fill="#475569">S3 (예정)</text>
+  <text x="885" y="206" font-size="12" text-anchor="middle" fill="#64748b">상품 이미지</text>
+  <rect x="800" y="260" width="170" height="80" rx="12" fill="#ffffff" stroke="#94a3b8" stroke-dasharray="5 4"/>
+  <text x="885" y="294" font-size="14" font-weight="700" text-anchor="middle" fill="#475569">CloudWatch (예정)</text>
+  <text x="885" y="316" font-size="12" text-anchor="middle" fill="#64748b">지표·로그·경보</text>
+  <line x1="690" y1="270" x2="796" y2="196" stroke="#94a3b8" stroke-width="2" stroke-dasharray="5 4" marker-end="url(#g)"/>
+  <line x1="690" y1="290" x2="796" y2="300" stroke="#94a3b8" stroke-width="2" stroke-dasharray="5 4" marker-end="url(#g)"/>
+  <text x="764" y="250" font-size="11" fill="#64748b">IAM 역할</text>
+</svg>

@@ -1,0 +1,47 @@
+{% extends "base.html" %}{% load humanize %}
+{% block title %}장바구니 | {{ SHOP_NAME }}{% endblock %}
+{% block content %}
+<main class="container">
+  <h1 class="page-title">장바구니</h1>
+  {% if lines %}
+  <div class="cart-layout">
+    <div>
+      <div class="cart-head"><span>담은 상품 {{ lines|length }}개</span></div>
+      {% for line in lines %}{% with p=line.product %}
+      <div class="cart-item">
+        <a href="{{ p.get_absolute_url }}" class="ci-thumb">{% if p.image %}<img src="{{ p.image.url }}" alt="{{ p.name }}">{% else %}<div class="placeholder-img">🥬</div>{% endif %}</a>
+        <div>
+          <h3>{{ p.name }}</h3>
+          <div class="unit">{{ p.final_price|intcomma }}원{% if p.discount_rate %} <del>{{ p.price|intcomma }}원</del>{% endif %}
+            {% if p.stock < line.quantity %}<br><b style="color:var(--red)">재고 {{ p.stock }}개 — 수량을 줄여 주세요</b>{% endif %}</div>
+        </div>
+        <form method="post" action="{% url 'orders:cart_update' %}" class="qty">
+          {% csrf_token %}<input type="hidden" name="product_id" value="{{ p.pk }}">
+          <button name="qty" value="{{ line.quantity|add:'-1' }}">−</button>
+          <span style="min-width:36px;text-align:center;font-weight:700">{{ line.quantity }}</span>
+          <button name="qty" value="{{ line.quantity|add:'1' }}">+</button>
+        </form>
+        <div class="line-total">{{ line.line_total|intcomma }}원</div>
+        <form method="post" action="{% url 'orders:cart_remove' %}">
+          {% csrf_token %}<input type="hidden" name="product_id" value="{{ p.pk }}">
+          <button class="remove" aria-label="삭제">×</button>
+        </form>
+      </div>
+      {% endwith %}{% endfor %}
+    </div>
+    <aside class="summary">
+      <h3>결제 정보</h3>
+      {% include "orders/_summary.html" %}
+      <div class="ship-bar">
+        {% if summary.free_left %}{{ summary.free_left|intcomma }}원 더 담으면 무료배송{% else %}무료배송 적용 중이에요 🎉{% endif %}
+        <div class="bar"><i style="width:{{ summary.free_percent }}%"></i></div>
+      </div>
+      <a href="{% url 'orders:checkout' %}" class="btn btn-primary btn-block">{{ summary.total|intcomma }}원 주문하기</a>
+      {% if not user.is_authenticated %}<p style="font-size:13px;color:var(--muted);text-align:center;margin-top:10px">주문하려면 로그인이 필요해요</p>{% endif %}
+    </aside>
+  </div>
+  {% else %}
+  <div class="empty"><div class="ico">🛒</div>장바구니가 비어 있어요<br><br><a class="btn btn-primary" href="{% url 'shop:home' %}">쇼핑하러 가기</a></div>
+  {% endif %}
+</main>
+{% endblock %}

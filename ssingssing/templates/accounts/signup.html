@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}회원가입 | {{ SHOP_NAME }}{% endblock %}
+{% block content %}
+<main class="auth-wrap">
+  <form method="post" class="auth-card" novalidate>
+    {% csrf_token %}
+    <h1>회원가입</h1>
+    <p class="lead">가입하고 3만원 이상 무료배송 혜택을 받아 보세요</p>
+    {% for f in form %}
+    <div class="field">
+      <label for="{{ f.id_for_label }}">{{ f.label }}</label>
+      {% if f.name == "password1" or f.name == "password2" %}
+        <div class="input-wrap">{{ f }}<button type="button" class="toggle-pw">보기</button></div>
+      {% else %}{{ f }}{% endif %}
+      {% if f.name == "password1" %}<p class="help">8자 이상, 숫자로만 된 비밀번호는 쓸 수 없어요.</p>
+      {% elif f.help_text and f.name != "password2" %}<p class="help">{{ f.help_text|safe }}</p>{% endif %}
+      {{ f.errors }}
+    </div>
+    {% endfor %}
+    <input type="hidden" name="next" value="{{ next }}">
+    <button class="btn btn-primary btn-block" type="submit" style="margin-top:8px">가입하기</button>
+    <p class="switch">이미 계정이 있나요? <a href="{% url 'accounts:login' %}">로그인</a></p>
+  </form>
+</main>
+{% endblock %}
+{% block scripts %}{% include "accounts/_pw_toggle.html" %}{% endblock %}

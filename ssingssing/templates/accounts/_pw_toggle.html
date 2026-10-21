@@ -1,0 +1,6 @@
+<script>
+  document.querySelectorAll(".toggle-pw").forEach(b => b.onclick = () => {
+    const i = b.previousElementSibling, show = i.type === "password";
+    i.type = show ? "text" : "password"; b.textContent = show ? "숨기기" : "보기";
+  });
+</script>

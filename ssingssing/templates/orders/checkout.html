@@ -1,0 +1,40 @@
+{% extends "base.html" %}{% load humanize %}
+{% block title %}주문서 | {{ SHOP_NAME }}{% endblock %}
+{% block content %}
+<main class="container">
+  <h1 class="page-title">주문서</h1>
+  <form method="post" class="checkout-layout" novalidate>
+    {% csrf_token %}
+    <div>
+      {% if form.non_field_errors %}<div class="form-errors">{{ form.non_field_errors|join:" " }}</div>{% endif %}
+      <div class="panel">
+        <h3>배송 정보</h3>
+        <div class="two">
+          <div class="field"><label for="{{ form.recipient.id_for_label }}">받는 분</label>{{ form.recipient }}{{ form.recipient.errors }}</div>
+          <div class="field"><label for="{{ form.phone.id_for_label }}">연락처</label>{{ form.phone }}{{ form.phone.errors }}</div>
+        </div>
+        <div class="field"><label for="{{ form.address.id_for_label }}">주소</label>{{ form.address }}{{ form.address.errors }}</div>
+        <div class="field"><label for="{{ form.address_detail.id_for_label }}">상세 주소</label>{{ form.address_detail }}</div>
+        <div class="field"><label for="{{ form.memo.id_for_label }}">배송 요청사항</label>{{ form.memo }}</div>
+      </div>
+      <div class="panel">
+        <h3>주문 상품</h3>
+        {% for line in lines %}
+        <div class="mini-item">
+          {% if line.product.image %}<img src="{{ line.product.image.url }}" alt="">{% else %}<div class="mi-thumb"></div>{% endif %}
+          <div class="mi-name">{{ line.product.name }}<br><small style="color:var(--muted)">{{ line.quantity }}개</small></div>
+          <b>{{ line.line_total|intcomma }}원</b>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    <aside class="summary">
+      <h3>결제 금액</h3>
+      {% include "orders/_summary.html" %}
+      <label style="display:flex;gap:8px;align-items:center;font-size:13px;color:var(--muted);margin:16px 0">{{ form.agree }} 주문 내용을 확인했으며 결제에 동의합니다</label>
+      {{ form.agree.errors }}
+      <button class="btn btn-primary btn-block" type="submit">결제 수단 선택하기</button>
+    </aside>
+  </form>
+</main>
+{% endblock %}

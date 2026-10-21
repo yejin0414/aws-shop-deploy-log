@@ -1,0 +1,15 @@
+{% extends "base.html" %}{% load humanize %}
+{% block title %}주문내역 | {{ SHOP_NAME }}{% endblock %}
+{% block content %}
+<main class="container" style="max-width:760px;padding-bottom:40px">
+  <h1 class="page-title">주문내역</h1>
+  {% for o in orders %}
+  <a href="{% url 'orders:detail' o.order_id %}" class="order-card" style="display:block">
+    <div class="oc-head"><span><b>{{ o.created_at|date:"Y.m.d H:i" }}</b> · {{ o.order_id }}</span><span class="status-pill {{ o.status }}">{{ o.get_status_display }}</span></div>
+    <div style="display:flex;justify-content:space-between"><span>{{ o.order_name }}</span><b>{{ o.total_amount|intcomma }}원</b></div>
+  </a>
+  {% empty %}
+  <div class="empty"><div class="ico">📦</div>아직 주문한 상품이 없어요<br><br><a class="btn btn-primary" href="{% url 'shop:home' %}">쇼핑하러 가기</a></div>
+  {% endfor %}
+</main>
+{% endblock %}

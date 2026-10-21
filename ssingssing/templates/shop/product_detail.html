@@ -1,0 +1,59 @@
+{% extends "base.html" %}{% load humanize %}
+{% block title %}{{ product.name }} | {{ SHOP_NAME }}{% endblock %}
+{% block content %}
+<main class="container">
+  <div class="breadcrumb"><a href="{% url 'shop:home' %}">홈</a> › <a href="{% url 'shop:home' %}?cat={{ product.category.pk }}#products">{{ product.category.name }}</a> › {{ product.name }}</div>
+  <div class="detail">
+    <div class="thumb">
+      {% if product.badge %}<span class="badge {% if product.badge == 'BEST' %}best{% endif %}">{{ product.badge }}</span>{% endif %}
+      {% if product.image %}<img src="{{ product.image.url }}" alt="{{ product.name }}">{% else %}<div class="placeholder-img">🥬</div>{% endif %}
+    </div>
+    <div>
+      <div style="color:var(--muted)">{{ product.category.name }}</div>
+      <h1>{{ product.name }}</h1>
+      <p class="desc">{{ product.description|linebreaksbr }}</p>
+      <div class="price">
+        {% if product.discount_rate %}<span class="rate">{{ product.discount_rate }}%</span>{% endif %}
+        <span class="now">{{ product.final_price|intcomma }}원</span>
+        {% if product.discount_rate %}<del>{{ product.price|intcomma }}원</del>{% endif %}
+      </div>
+      <form method="post" action="{% url 'orders:cart_add' %}" data-ajax-cart>
+        {% csrf_token %}
+        <input type="hidden" name="product_id" value="{{ product.pk }}">
+        <dl class="info-table">
+          <div><dt>배송</dt><dd>샛별배송 · {{ FREE_SHIPPING|intcomma }}원 이상 무료</dd></div>
+          <div><dt>재고</dt><dd>{% if product.sold_out %}<b style="color:var(--red)">품절</b>{% elif product.stock < 10 %}<b style="color:#d97706">{{ product.stock }}개 남음</b>{% else %}구매 가능{% endif %}</dd></div>
+          <div><dt>수량</dt><dd>
+            <div class="qty"><button type="button" data-step="-1">−</button><input name="qty" id="qty" type="number" value="1" min="1" max="{{ product.stock }}"><button type="button" data-step="1">+</button></div>
+          </dd></div>
+        </dl>
+        <div class="total-row"><span>총 상품금액</span><b id="total">{{ product.final_price|intcomma }}원</b></div>
+        {% if product.sold_out %}
+          <button class="btn btn-ghost btn-block" disabled>품절된 상품이에요</button>
+        {% else %}
+        <div class="detail-actions">
+          <button class="btn btn-outline btn-block" type="submit">장바구니 담기</button>
+          <button class="btn btn-primary btn-block" type="submit" name="buy_now" value="1">바로 구매</button>
+        </div>
+        {% endif %}
+      </form>
+    </div>
+  </div>
+
+  {% if related %}
+  <section class="section" style="padding-top:20px">
+    <div class="section-title"><h2>함께 보면 좋은 상품</h2></div>
+    <div class="grid">{% for p in related %}{% include "includes/product_card.html" %}{% endfor %}</div>
+  </section>
+  {% endif %}
+</main>
+{% endblock %}
+{% block scripts %}
+<script>
+  const price = {{ product.final_price }}, max = {{ product.stock|default:1 }};
+  const qty = document.getElementById("qty"), total = document.getElementById("total");
+  const render = () => { qty.value = Math.min(max, Math.max(1, parseInt(qty.value) || 1)); total.textContent = (price * qty.value).toLocaleString("ko-KR") + "원"; };
+  document.querySelectorAll("[data-step]").forEach(b => b.onclick = () => { qty.value = +qty.value + +b.dataset.step; render(); });
+  qty.addEventListener("change", render);
+</script>
+{% endblock %}

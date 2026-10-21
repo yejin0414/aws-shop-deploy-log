@@ -1,0 +1,35 @@
+{% extends "base.html" %}{% load humanize %}
+{% block title %}주문 상세 | {{ SHOP_NAME }}{% endblock %}
+{% block content %}
+<main class="container" style="max-width:760px;padding-bottom:40px">
+  <h1 class="page-title">주문 상세</h1>
+  <div class="panel">
+    <div class="oc-head" style="display:flex;justify-content:space-between;margin-bottom:14px"><b>{{ order.order_id }}</b><span class="status-pill {{ order.status }}">{{ order.get_status_display }}</span></div>
+    {% for it in order.items.all %}
+    <div class="mini-item"><div class="mi-name">{{ it.product_name }} · {{ it.quantity }}개</div><span>{{ it.line_total|intcomma }}원</span></div>
+    {% endfor %}
+    <div class="sum-row" style="margin-top:10px"><span>배송비</span><span>{% if order.shipping_fee %}{{ order.shipping_fee|intcomma }}원{% else %}무료{% endif %}</span></div>
+    <div class="sum-row total"><span>결제금액</span><b>{{ order.total_amount|intcomma }}원</b></div>
+  </div>
+  <div class="panel">
+    <h3>배송·결제 정보</h3>
+    <dl class="detail-grid">
+      <dt>받는 분</dt><dd>{{ order.recipient }} · {{ order.phone }}</dd>
+      <dt>주소</dt><dd>{{ order.address }} {{ order.address_detail }}</dd>
+      <dt>요청사항</dt><dd>{{ order.memo|default:"-" }}</dd>
+      <dt>결제수단</dt><dd>{{ order.payment_method|default:"-" }}</dd>
+      <dt>결제일시</dt><dd>{{ order.paid_at|date:"Y.m.d H:i"|default:"-" }}</dd>
+      {% if order.canceled_at %}<dt>취소일시</dt><dd>{{ order.canceled_at|date:"Y.m.d H:i" }}</dd>{% endif %}
+      {% if order.status == "FAILED" %}<dt>실패 사유</dt><dd>{{ order.fail_reason }}</dd>{% endif %}
+    </dl>
+  </div>
+  <div style="display:flex;gap:10px;justify-content:flex-end">
+    {% if order.receipt_url %}<a href="{{ order.receipt_url }}" target="_blank" class="btn btn-ghost">영수증</a>{% endif %}
+    {% if order.can_cancel %}
+    <form method="post" action="{% url 'orders:cancel' order.order_id %}" onsubmit="return confirm('주문을 취소하고 환불받을까요?')">
+      {% csrf_token %}<button class="btn btn-outline" style="border-color:var(--red);color:var(--red)">주문 취소</button>
+    </form>
+    {% endif %}
+  </div>
+</main>
+{% endblock %}

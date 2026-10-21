@@ -1,0 +1,23 @@
+{% load humanize %}<article class="product">
+  <div class="thumb">
+    {% if p.badge %}<span class="badge {% if p.badge == 'BEST' %}best{% endif %}">{{ p.badge }}</span>{% endif %}
+    <a href="{{ p.get_absolute_url }}">
+      {% if p.image %}<img src="{{ p.image.url }}" alt="{{ p.name }}" loading="lazy">{% else %}<div class="placeholder-img">🥬</div>{% endif %}
+    </a>
+    {% if p.sold_out %}<div class="sold-out">품절</div>{% else %}
+    <form method="post" action="{% url 'orders:cart_add' %}" data-ajax-cart>
+      {% csrf_token %}<input type="hidden" name="product_id" value="{{ p.pk }}">
+      <button class="add-btn" aria-label="장바구니 담기">🛒</button>
+    </form>
+    {% endif %}
+  </div>
+  <div class="info">
+    <div class="cat">{{ p.category.name }}</div>
+    <a href="{{ p.get_absolute_url }}"><h3>{{ p.name }}</h3></a>
+    <div class="price">
+      {% if p.discount_rate %}<span class="rate">{{ p.discount_rate }}%</span>{% endif %}
+      <span class="now">{{ p.final_price|intcomma }}원</span>
+      {% if p.discount_rate %}<del>{{ p.price|intcomma }}원</del>{% endif %}
+    </div>
+  </div>
+</article>

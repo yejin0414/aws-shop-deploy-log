@@ -1,0 +1,56 @@
+{% extends "base.html" %}{% load humanize %}
+{% block title %}결제하기 | {{ SHOP_NAME }}{% endblock %}
+{% block head %}<script src="https://js.tosspayments.com/v2/standard"></script>{% endblock %}
+{% block content %}
+<main class="container" style="max-width:640px;padding-bottom:60px">
+  <h1 class="page-title">결제하기</h1>
+  {% if "test_" in client_key %}<div class="test-banner">🧪 테스트 결제 모드예요. 결제창에 아무 카드 정보를 넣어도 실제로 돈이 빠져나가지 않아요.</div>{% endif %}
+  {% if not client_key %}<div class="form-errors">토스페이먼츠 클라이언트 키(TOSS_CLIENT_KEY)가 설정되지 않았어요. .env 파일을 확인해 주세요.</div>{% endif %}
+
+  <div class="panel">
+    <div class="sum-row"><span>주문 상품</span><span>{{ order.order_name }}</span></div>
+    <div class="sum-row"><span>받는 분</span><span>{{ order.recipient }} · {{ order.phone }}</span></div>
+    <div class="sum-row total"><span>결제금액</span><b>{{ order.total_amount|intcomma }}원</b></div>
+  </div>
+
+  <div id="payment-method"></div>
+  <div id="agreement"></div>
+  <button class="btn btn-primary btn-block" id="payButton" disabled>{{ order.total_amount|intcomma }}원 결제하기</button>
+  <p style="text-align:center;margin-top:14px"><a href="{% url 'orders:cart' %}" style="color:var(--muted);font-size:14px">장바구니로 돌아가기</a></p>
+</main>
+{% endblock %}
+{% block scripts %}
+<script>
+  (async () => {
+    const button = document.getElementById("payButton");
+    try {
+      const tossPayments = TossPayments("{{ client_key|escapejs }}");
+      const widgets = tossPayments.widgets({ customerKey: "{{ customer_key|escapejs }}" });
+      await widgets.setAmount({ currency: "KRW", value: {{ order.total_amount }} });
+      await Promise.all([
+        widgets.renderPaymentMethods({ selector: "#payment-method", variantKey: "DEFAULT" }),
+        widgets.renderAgreement({ selector: "#agreement", variantKey: "AGREEMENT" }),
+      ]);
+      button.disabled = false;
+      button.addEventListener("click", async () => {
+        try {
+          await widgets.requestPayment({
+            orderId: "{{ order.order_id|escapejs }}",
+            orderName: "{{ order.order_name|escapejs }}",
+            customerName: "{{ order.recipient|escapejs }}",
+            customerEmail: "{{ user.email|escapejs }}",
+            customerMobilePhone: "{{ order.phone|cut:'-'|escapejs }}",
+            successUrl: "{{ success_url|escapejs }}",
+            failUrl: "{{ fail_url|escapejs }}",
+          });
+        } catch (err) {
+          if (err.code !== "USER_CANCEL") alert(err.message || "결제 요청 중 문제가 생겼어요.");
+        }
+      });
+    } catch (err) {
+      console.error(err);
+      document.getElementById("payment-method").innerHTML = '<div class="form-errors">결제창을 불러오지 못했어요. 결제위젯 연동 키가 맞는지 확인해 주세요.</div>';
+    }
+  })();
+</script>
+{% endblock %}

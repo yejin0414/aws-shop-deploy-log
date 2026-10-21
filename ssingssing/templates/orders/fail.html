@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}결제 실패 | {{ SHOP_NAME }}{% endblock %}
+{% block content %}
+<main class="container">
+  <div class="done">
+    <div class="circle" style="background:#fff1f2;color:var(--red)">!</div>
+    <h1>결제가 완료되지 않았어요</h1>
+    <p>{{ message }}{% if code %} <small>({{ code }})</small>{% endif %}</p>
+    <a href="{% url 'orders:cart' %}" class="btn btn-primary">장바구니에서 다시 주문하기</a>
+  </div>
+</main>
+{% endblock %}

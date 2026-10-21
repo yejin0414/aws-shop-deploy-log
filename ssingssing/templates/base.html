@@ -1,0 +1,74 @@
+{% load static humanize %}<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}{{ SHOP_NAME }} | 오늘 주문, 내일 도착{% endblock %}</title>
+  <link rel="stylesheet" href="{% static 'css/style.css' %}">
+  {% block head %}{% endblock %}
+</head>
+<body>
+  <div class="topbar"><b>{{ FREE_SHIPPING|intcomma }}원 이상 무료배송</b> · 밤 11시 전 주문하면 내일 도착</div>
+  <header class="header">
+    <div class="container header-main">
+      <a href="{% url 'shop:home' %}" class="logo"><span class="logo-mark">🥬</span>{{ SHOP_NAME }}</a>
+      <form class="search" action="{% url 'shop:home' %}">
+        <input name="q" placeholder="찾으시는 상품을 검색해 보세요" value="{{ q|default:'' }}">
+        <button aria-label="검색">🔍</button>
+      </form>
+      <div class="header-actions">
+        {% if user.is_authenticated %}
+          <span class="user-chip"><span class="avatar">{{ user.first_name|default:user.username|first|upper }}</span>{{ user.first_name|default:user.username }}님</span>
+          <a href="{% url 'orders:list' %}">주문내역</a>
+          {% if user.is_staff %}<a href="{% url 'admin:index' %}">관리자</a>{% endif %}
+          <form method="post" action="{% url 'accounts:logout' %}" class="inline-form">{% csrf_token %}<button class="link-like">로그아웃</button></form>
+        {% else %}
+          <a href="{% url 'accounts:login' %}?next={% if request.GET.next %}{{ request.GET.next|urlencode }}{% else %}{{ request.get_full_path|urlencode }}{% endif %}">로그인</a>
+          <a href="{% url 'accounts:signup' %}?next={% if request.GET.next %}{{ request.GET.next|urlencode }}{% else %}{{ request.get_full_path|urlencode }}{% endif %}">회원가입</a>
+        {% endif %}
+        <a href="{% url 'orders:cart' %}" class="icon-btn" aria-label="장바구니"><span class="ico">🛒</span><span class="cart-count {% if cart_count %}show{% endif %}" id="cartCount">{{ cart_count }}</span></a>
+      </div>
+    </div>
+    <nav class="catnav"><div class="container">
+      <a href="{% url 'shop:home' %}#products" class="{% if request.resolver_match.url_name == 'home' and not current and sort != 'sale' and not q %}active{% endif %}">전체</a>
+      {% for c in nav_categories %}
+        <a href="{% url 'shop:home' %}?cat={{ c.pk }}#products" class="{% if current.pk == c.pk %}active{% endif %}">{{ c.name }}</a>
+      {% endfor %}
+      <a href="{% url 'shop:home' %}?sort=sale#products" class="{% if sort == 'sale' %}active{% endif %}">특가</a>
+    </div></nav>
+  </header>
+
+  {% block content %}{% endblock %}
+
+  <footer class="footer"><div class="container">
+    <div class="cols">
+      <div><a href="{% url 'shop:home' %}" class="logo"><span class="logo-mark">🥬</span>{{ SHOP_NAME }}</a>
+        <p style="margin-top:10px">상호명 및 사업자 정보는 사업자등록 후 표시됩니다.<br>현재 결제는 토스페이먼츠 테스트 모드로 실제 출금되지 않습니다.</p></div>
+      <div><h4>쇼핑</h4><ul><li><a href="{% url 'shop:home' %}">전체 상품</a></li><li><a href="{% url 'orders:cart' %}">장바구니</a></li><li><a href="{% url 'orders:list' %}">주문내역</a></li></ul></div>
+      <div><h4>고객센터</h4><ul><li>평일 09:00 ~ 18:00</li><li>help@example.com</li></ul></div>
+    </div>
+    <div class="copy">© 2026 {{ SHOP_NAME }}</div>
+  </div></footer>
+
+  {% if messages %}
+  <div class="messages">{% for m in messages %}<div class="msg {{ m.tags }}">{{ m }}</div>{% endfor %}</div>
+  {% endif %}
+
+  <script>
+    // 장바구니 담기 (페이지 이동 없이)
+    document.addEventListener("submit", async (e) => {
+      const form = e.target.closest("form[data-ajax-cart]");
+      if (!form || e.submitter?.name === "buy_now") return;
+      e.preventDefault();
+      const res = await fetch(form.action, { method: "POST", body: new FormData(form), headers: { "X-Requested-With": "XMLHttpRequest" } });
+      const data = await res.json().catch(() => ({ message: "잠시 후 다시 시도해 주세요" }));
+      const box = document.querySelector(".messages") || Object.assign(document.createElement("div"), { className: "messages" });
+      document.body.appendChild(box);
+      const msg = Object.assign(document.createElement("div"), { className: "msg " + (data.ok ? "success" : "error"), textContent: data.message });
+      box.appendChild(msg); setTimeout(() => msg.remove(), 3600);
+      if (data.ok) { const c = document.getElementById("cartCount"); c.textContent = data.count; c.classList.add("show"); }
+    });
+  </script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

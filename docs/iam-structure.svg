@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="400" viewBox="0 0 1000 400" font-family="Pretendard, 'Apple SD Gothic Neo', 'Malgun Gothic', 'Noto Sans KR', sans-serif">
+  <defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#334155"/></marker></defs>
+  <rect width="1000" height="400" fill="#ffffff"/>
+  <text x="30" y="40" font-size="22" font-weight="700" fill="#0f172a">IAM 구성: 사람은 사용자·그룹, 서버는 역할</text>
+
+  <rect x="30" y="80" width="250" height="110" rx="12" fill="#fef2f2" stroke="#ef4444"/>
+  <text x="155" y="114" font-size="16" font-weight="700" text-anchor="middle" fill="#991b1b">루트 계정</text>
+  <text x="155" y="140" font-size="13" text-anchor="middle" fill="#7f1d1d">MFA 적용 · 평소 사용 안 함</text>
+  <text x="155" y="162" font-size="13" text-anchor="middle" fill="#7f1d1d">IAM 생성·결제 설정만</text>
+
+  <rect x="370" y="80" width="260" height="110" rx="12" fill="#eff6ff" stroke="#3b82f6"/>
+  <text x="500" y="112" font-size="16" font-weight="700" text-anchor="middle" fill="#1e40af">사용자 그룹</text>
+  <text x="500" y="138" font-size="13" text-anchor="middle" fill="#1e3a8a">정책: AdministratorAccess</text>
+  <text x="500" y="160" font-size="12" text-anchor="middle" fill="#64748b">그룹에 정책이 없으면 권한 0</text>
+
+  <rect x="720" y="70" width="250" height="56" rx="10" fill="#f8fafc" stroke="#94a3b8"/>
+  <text x="845" y="104" font-size="14" font-weight="700" text-anchor="middle" fill="#0f172a">IAM 사용자 A (콘솔 로그인)</text>
+  <rect x="720" y="142" width="250" height="56" rx="10" fill="#f8fafc" stroke="#94a3b8"/>
+  <text x="845" y="176" font-size="14" font-weight="700" text-anchor="middle" fill="#0f172a">IAM 사용자 B (콘솔 로그인)</text>
+
+  <line x1="280" y1="135" x2="366" y2="135" stroke="#334155" stroke-width="2" marker-end="url(#a)"/>
+  <text x="288" y="125" font-size="11" fill="#334155">생성</text>
+  <line x1="630" y1="120" x2="716" y2="100" stroke="#334155" stroke-width="2" marker-end="url(#a)"/>
+  <line x1="630" y1="150" x2="716" y2="168" stroke="#334155" stroke-width="2" marker-end="url(#a)"/>
+  <text x="640" y="200" font-size="11" fill="#334155">권한 상속</text>
+
+  <rect x="30" y="250" width="250" height="110" rx="12" fill="#f8fafc" stroke="#334155"/>
+  <text x="155" y="286" font-size="16" font-weight="700" text-anchor="middle" fill="#0f172a">EC2 인스턴스</text>
+  <text x="155" y="312" font-size="13" text-anchor="middle" fill="#475569">액세스 키를 저장하지 않음</text>
+
+  <rect x="370" y="250" width="260" height="110" rx="12" fill="#ecfdf5" stroke="#10b981"/>
+  <text x="500" y="282" font-size="16" font-weight="700" text-anchor="middle" fill="#065f46">IAM 역할 (예정)</text>
+  <text x="500" y="308" font-size="13" text-anchor="middle" fill="#064e3b">사용 사례 EC2 → 인스턴스 프로파일</text>
+  <text x="500" y="330" font-size="12" text-anchor="middle" fill="#64748b">최소 권한 정책 1개 연결</text>
+
+  <rect x="720" y="250" width="250" height="110" rx="12" fill="#ffffff" stroke="#94a3b8" stroke-dasharray="5 4"/>
+  <text x="845" y="286" font-size="14" font-weight="700" text-anchor="middle" fill="#475569">S3 media/* 읽기·쓰기·삭제</text>
+  <text x="845" y="312" font-size="14" font-weight="700" text-anchor="middle" fill="#475569">CloudWatch 지표·로그 전송</text>
+
+  <line x1="280" y1="305" x2="366" y2="305" stroke="#334155" stroke-width="2" marker-end="url(#a)"/>
+  <text x="288" y="295" font-size="11" fill="#334155">연결</text>
+  <line x1="630" y1="305" x2="716" y2="305" stroke="#334155" stroke-width="2" marker-end="url(#a)"/>
+  <text x="640" y="295" font-size="11" fill="#334155">허용</text>
+</svg>
